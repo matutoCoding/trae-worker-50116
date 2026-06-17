@@ -15,11 +15,12 @@ import {
   Route,
   FileText,
   X,
+  Compass,
 } from 'lucide-react';
 import type { Project } from '@/types';
 
 export default function Projects() {
-  const { projects, samples, routes, fieldRecords, addProject } = useStore();
+  const { projects, samples, routes, fieldRecords, attitudes, addProject } = useStore();
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('全部');
@@ -99,6 +100,7 @@ export default function Projects() {
       samples: samples.filter((s) => s.projectId === projectId).length,
       routes: routes.filter((r) => r.projectId === projectId).length,
       records: fieldRecords.filter((r) => r.projectId === projectId).length,
+      attitudes: attitudes.filter((a) => a.projectId === projectId).length,
     };
   };
 
@@ -196,7 +198,16 @@ export default function Projects() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 mt-5 pt-4 border-t border-slate-100">
+              <div className="grid grid-cols-4 gap-2 mt-5 pt-4 border-t border-slate-100">
+                <div className="text-center">
+                  <p className="text-lg font-bold text-slate-800">
+                    {stats.routes}
+                  </p>
+                  <p className="text-xs text-slate-400 flex items-center justify-center gap-1">
+                    <Route className="w-3 h-3" />
+                    路线
+                  </p>
+                </div>
                 <div className="text-center">
                   <p className="text-lg font-bold text-slate-800">
                     {stats.samples}
@@ -208,11 +219,11 @@ export default function Projects() {
                 </div>
                 <div className="text-center">
                   <p className="text-lg font-bold text-slate-800">
-                    {stats.routes}
+                    {stats.attitudes}
                   </p>
                   <p className="text-xs text-slate-400 flex items-center justify-center gap-1">
-                    <Route className="w-3 h-3" />
-                    路线
+                    <Compass className="w-3 h-3" />
+                    产状
                   </p>
                 </div>
                 <div className="text-center">
@@ -237,7 +248,7 @@ export default function Projects() {
 
       {selectedProject && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-auto">
+          <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-auto">
             <div className="p-6 border-b border-slate-100">
               <div className="flex items-start justify-between">
                 <div>
@@ -250,55 +261,48 @@ export default function Projects() {
                   onClick={() => setSelectedProject(null)}
                   className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
                 >
-                  <svg
-                    className="w-5 h-5 text-slate-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
+                  <X className="w-5 h-5 text-slate-400" />
                 </button>
               </div>
             </div>
 
             <div className="p-6 space-y-6">
-              <div className="h-48 bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl flex items-center justify-center">
+              <div className="h-40 bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl flex items-center justify-center">
                 <MapIcon className="w-16 h-16 text-slate-300" />
               </div>
 
               <div>
                 <h4 className="font-semibold text-slate-800 mb-2">项目简介</h4>
-                <p className="text-slate-600">{selectedProject.description}</p>
+                <p className="text-slate-600">
+                  {selectedProject.description || '暂无项目描述'}
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-slate-50 rounded-xl">
                   <p className="text-sm text-slate-500">项目区域</p>
                   <p className="font-medium text-slate-800 mt-1">
-                    {selectedProject.area}
+                    {selectedProject.area || '—'}
                   </p>
                 </div>
                 <div className="p-4 bg-slate-50 rounded-xl">
                   <p className="text-sm text-slate-500">勘探面积</p>
                   <p className="font-medium text-slate-800 mt-1">
-                    {selectedProject.areaSize} km²
+                    {selectedProject.areaSize || 0} km²
                   </p>
                 </div>
                 <div className="p-4 bg-slate-50 rounded-xl">
                   <p className="text-sm text-slate-500">项目负责人</p>
                   <p className="font-medium text-slate-800 mt-1">
-                    {selectedProject.leader}
+                    {selectedProject.leader || '—'}
                   </p>
                 </div>
                 <div className="p-4 bg-slate-50 rounded-xl">
                   <p className="text-sm text-slate-500">项目状态</p>
-                  <Badge variant={getStatusColor(selectedProject.status) as any} className="mt-1">
+                  <Badge
+                    variant={getStatusColor(selectedProject.status) as any}
+                    className="mt-1"
+                  >
                     {selectedProject.status}
                   </Badge>
                 </div>
@@ -315,35 +319,299 @@ export default function Projects() {
                       ></div>
                     </div>
                   </div>
-                  <span className="text-sm font-medium text-amber-600">65%</span>
+                  <span className="text-sm font-medium text-amber-600">
+                    65%
+                  </span>
                 </div>
                 <div className="flex justify-between mt-2 text-sm text-slate-500">
-                  <span>开始：{selectedProject.startDate}</span>
-                  <span>结束：{selectedProject.endDate}</span>
+                  <span>开始：{selectedProject.startDate || '—'}</span>
+                  <span>结束：{selectedProject.endDate || '—'}</span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                <div className="p-4 bg-amber-50 rounded-xl text-center">
-                  <Beaker className="w-8 h-8 text-amber-600 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-slate-800">
-                    {getProjectStats(selectedProject.id).samples}
-                  </p>
-                  <p className="text-sm text-slate-500">采集样品</p>
-                </div>
+              <div className="grid grid-cols-4 gap-4">
                 <div className="p-4 bg-green-50 rounded-xl text-center">
-                  <Route className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                  <Route className="w-7 h-7 text-green-600 mx-auto mb-2" />
                   <p className="text-2xl font-bold text-slate-800">
                     {getProjectStats(selectedProject.id).routes}
                   </p>
-                  <p className="text-sm text-slate-500">踏勘路线</p>
+                  <p className="text-xs text-slate-500">踏勘路线</p>
+                </div>
+                <div className="p-4 bg-amber-50 rounded-xl text-center">
+                  <Beaker className="w-7 h-7 text-amber-600 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-slate-800">
+                    {getProjectStats(selectedProject.id).samples}
+                  </p>
+                  <p className="text-xs text-slate-500">采集样品</p>
+                </div>
+                <div className="p-4 bg-purple-50 rounded-xl text-center">
+                  <Compass className="w-7 h-7 text-purple-600 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-slate-800">
+                    {getProjectStats(selectedProject.id).attitudes}
+                  </p>
+                  <p className="text-xs text-slate-500">产状测量</p>
                 </div>
                 <div className="p-4 bg-blue-50 rounded-xl text-center">
-                  <FileText className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                  <FileText className="w-7 h-7 text-blue-600 mx-auto mb-2" />
                   <p className="text-2xl font-bold text-slate-800">
                     {getProjectStats(selectedProject.id).records}
                   </p>
-                  <p className="text-sm text-slate-500">野外记录</p>
+                  <p className="text-xs text-slate-500">野外记录</p>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100">
+                <h4 className="font-semibold text-slate-800 mb-4">
+                  关联数据汇总
+                </h4>
+
+                <div className="space-y-5">
+                  {/* 踏勘路线 */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h5 className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+                        <Route className="w-4 h-4 text-green-600" />
+                        踏勘路线
+                      </h5>
+                      <span className="text-xs text-slate-400">
+                        共{' '}
+                        {
+                          routes.filter(
+                            (r) => r.projectId === selectedProject.id
+                          ).length
+                        }{' '}
+                        条
+                      </span>
+                    </div>
+                    {routes.filter((r) => r.projectId === selectedProject.id)
+                      .length === 0 ? (
+                      <div className="p-6 bg-slate-50 rounded-xl text-center text-sm text-slate-400">
+                        暂无踏勘路线
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {routes
+                          .filter((r) => r.projectId === selectedProject.id)
+                          .slice(0, 5)
+                          .map((r) => (
+                            <div
+                              key={r.id}
+                              className="p-3 bg-slate-50 rounded-lg flex items-center justify-between"
+                            >
+                              <div>
+                                <p className="text-sm font-medium text-slate-800">
+                                  {r.name}
+                                </p>
+                                <p className="text-xs text-slate-500 mt-0.5">
+                                  {r.startPoint || '起点'} →{' '}
+                                  {r.endPoint || '终点'} · {r.distance || 0} km
+                                  · {r.planDate}
+                                </p>
+                              </div>
+                              <Badge
+                                variant={
+                                  r.status === '进行中'
+                                    ? 'success'
+                                    : r.status === '已完成'
+                                    ? 'default'
+                                    : 'warning'
+                                }
+                              >
+                                {r.status}
+                              </Badge>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 采集样品 */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h5 className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+                        <Beaker className="w-4 h-4 text-amber-600" />
+                        采集样品
+                      </h5>
+                      <span className="text-xs text-slate-400">
+                        共{' '}
+                        {
+                          samples.filter(
+                            (s) => s.projectId === selectedProject.id
+                          ).length
+                        }{' '}
+                        件
+                      </span>
+                    </div>
+                    {samples.filter((s) => s.projectId === selectedProject.id)
+                      .length === 0 ? (
+                      <div className="p-6 bg-slate-50 rounded-xl text-center text-sm text-slate-400">
+                        暂无样品数据
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto rounded-lg border border-slate-100">
+                        <table className="w-full text-sm">
+                          <thead className="bg-slate-50 text-slate-500 text-xs">
+                            <tr>
+                              <th className="py-2 px-3 text-left font-medium">
+                                编号
+                              </th>
+                              <th className="py-2 px-3 text-left font-medium">
+                                类型
+                              </th>
+                              <th className="py-2 px-3 text-left font-medium">
+                                采集人
+                              </th>
+                              <th className="py-2 px-3 text-left font-medium">
+                                状态
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {samples
+                              .filter(
+                                (s) => s.projectId === selectedProject.id
+                              )
+                              .slice(0, 6)
+                              .map((s) => (
+                                <tr key={s.id}>
+                                  <td className="py-2 px-3 font-mono text-xs text-slate-700">
+                                    {s.sampleNo}
+                                  </td>
+                                  <td className="py-2 px-3 text-slate-700">
+                                    {s.type}
+                                  </td>
+                                  <td className="py-2 px-3 text-slate-600">
+                                    {s.collector || '—'}
+                                  </td>
+                                  <td className="py-2 px-3">
+                                    <Badge
+                                      variant={
+                                        s.status === '已完成'
+                                          ? 'success'
+                                          : s.status === '检测中'
+                                          ? 'info'
+                                          : s.status === '待送检'
+                                          ? 'warning'
+                                          : 'default'
+                                      }
+                                    >
+                                      {s.status}
+                                    </Badge>
+                                  </td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 产状测量 */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h5 className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+                        <Compass className="w-4 h-4 text-purple-600" />
+                        产状测量
+                      </h5>
+                      <span className="text-xs text-slate-400">
+                        共{' '}
+                        {
+                          attitudes.filter(
+                            (a) => a.projectId === selectedProject.id
+                          ).length
+                        }{' '}
+                        条
+                      </span>
+                    </div>
+                    {attitudes.filter(
+                      (a) => a.projectId === selectedProject.id
+                    ).length === 0 ? (
+                      <div className="p-6 bg-slate-50 rounded-xl text-center text-sm text-slate-400">
+                        暂无产状测量数据
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {attitudes
+                          .filter((a) => a.projectId === selectedProject.id)
+                          .slice(0, 6)
+                          .map((a) => (
+                            <div
+                              key={a.id}
+                              className="p-3 bg-slate-50 rounded-lg grid grid-cols-3 gap-2 text-center text-xs"
+                            >
+                              <div>
+                                <p className="text-slate-400">走向</p>
+                                <p className="text-lg font-bold text-slate-800 mt-0.5">
+                                  {a.strike}°
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-slate-400">倾向</p>
+                                <p className="text-lg font-bold text-slate-800 mt-0.5">
+                                  {a.dipDirection}°
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-slate-400">倾角</p>
+                                <p className="text-lg font-bold text-slate-800 mt-0.5">
+                                  {a.dip}°
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 野外记录 */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h5 className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+                        <FileText className="w-4 h-4 text-blue-600" />
+                        野外记录
+                      </h5>
+                      <span className="text-xs text-slate-400">
+                        共{' '}
+                        {
+                          fieldRecords.filter(
+                            (r) => r.projectId === selectedProject.id
+                          ).length
+                        }{' '}
+                        条
+                      </span>
+                    </div>
+                    {fieldRecords.filter(
+                      (r) => r.projectId === selectedProject.id
+                    ).length === 0 ? (
+                      <div className="p-6 bg-slate-50 rounded-xl text-center text-sm text-slate-400">
+                        暂无野外记录
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {fieldRecords
+                          .filter((r) => r.projectId === selectedProject.id)
+                          .slice(0, 5)
+                          .map((r) => (
+                            <div
+                              key={r.id}
+                              className="p-3 bg-slate-50 rounded-lg"
+                            >
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium text-slate-800">
+                                  {r.title}
+                                </p>
+                                <span className="text-xs text-slate-400">
+                                  {r.recordDate}
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+                                {r.content}
+                              </p>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

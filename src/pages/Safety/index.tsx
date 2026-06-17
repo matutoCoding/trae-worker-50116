@@ -898,31 +898,35 @@ export default function Safety() {
 
               <div className="p-4 bg-slate-50 rounded-xl">
                 <p className="text-sm text-slate-500 mb-2">坐标信息</p>
-                <div className="flex gap-6 text-sm text-slate-700">
-                  <span>
-                    经度：
-                    <b className="text-slate-800">
-                      {selectedCamp.coordinates.longitude}°
-                    </b>
-                  </span>
-                  <span>
-                    纬度：
-                    <b className="text-slate-800">
-                      {selectedCamp.coordinates.latitude}°
-                    </b>
-                  </span>
-                  <span>
-                    海拔：
-                    <b className="text-slate-800">
-                      {selectedCamp.coordinates.elevation}m
-                    </b>
-                  </span>
-                </div>
+                {selectedCamp.coordinates ? (
+                  <div className="flex gap-6 text-sm text-slate-700 flex-wrap">
+                    <span>
+                      经度：
+                      <b className="text-slate-800">
+                        {selectedCamp.coordinates.longitude || '—'}°
+                      </b>
+                    </span>
+                    <span>
+                      纬度：
+                      <b className="text-slate-800">
+                        {selectedCamp.coordinates.latitude || '—'}°
+                      </b>
+                    </span>
+                    <span>
+                      海拔：
+                      <b className="text-slate-800">
+                        {selectedCamp.coordinates.elevation || '—'}m
+                      </b>
+                    </span>
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-400">暂无坐标数据</p>
+                )}
               </div>
 
-              {selectedCamp.facilities.length > 0 && (
-                <div>
-                  <h4 className="font-semibold text-slate-800 mb-3">配套设施</h4>
+              <div>
+                <h4 className="font-semibold text-slate-800 mb-3">配套设施</h4>
+                {selectedCamp.facilities.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {selectedCamp.facilities.map((f, idx) => (
                       <Badge key={idx} variant="default">
@@ -930,12 +934,16 @@ export default function Safety() {
                       </Badge>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <p className="p-4 bg-slate-50 rounded-lg text-sm text-slate-400 text-center">
+                    暂无配套设施数据
+                  </p>
+                )}
+              </div>
 
-              {selectedCamp.supplies.length > 0 && (
-                <div>
-                  <h4 className="font-semibold text-slate-800 mb-3">物资储备</h4>
+              <div>
+                <h4 className="font-semibold text-slate-800 mb-3">物资储备</h4>
+                {selectedCamp.supplies.length > 0 ? (
                   <div className="space-y-2">
                     {selectedCamp.supplies.map((s, idx) => (
                       <div
@@ -953,8 +961,12 @@ export default function Safety() {
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <p className="p-4 bg-slate-50 rounded-lg text-sm text-slate-400 text-center">
+                    暂无物资储备数据
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="p-6 border-t border-slate-100 flex gap-3">

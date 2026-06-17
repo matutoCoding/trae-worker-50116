@@ -21,6 +21,7 @@ export default function Sampling() {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('全部');
   const [statusFilter, setStatusFilter] = useState('全部');
+  const [projectFilter, setProjectFilter] = useState('全部');
   const [newSample, setNewSample] = useState({
     sampleNo: '',
     type: '岩石' as const,
@@ -41,7 +42,9 @@ export default function Sampling() {
     const matchesType = typeFilter === '全部' || sample.type === typeFilter;
     const matchesStatus =
       statusFilter === '全部' || sample.status === statusFilter;
-    return matchesSearch && matchesType && matchesStatus;
+    const matchesProject =
+      projectFilter === '全部' || sample.projectId === projectFilter;
+    return matchesSearch && matchesType && matchesStatus && matchesProject;
   });
 
   const getStatusColor = (status: string) => {
@@ -191,8 +194,20 @@ export default function Sampling() {
             className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Filter className="w-5 h-5 text-slate-400" />
+          <select
+            value={projectFilter}
+            onChange={(e) => setProjectFilter(e.target.value)}
+            className="px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-700"
+          >
+            <option value="全部">全部项目</option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}

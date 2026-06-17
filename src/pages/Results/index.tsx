@@ -16,11 +16,16 @@ import {
   User,
   ChevronRight,
   Plus,
+  Compass,
+  Route as RouteIcon,
+  Package,
+  X,
 } from 'lucide-react';
 
 export default function Results() {
-  const { samples, projects, attitudes, fieldRecords, updateSampleStatus } = useStore();
+  const { samples, projects, attitudes, fieldRecords, routes, updateSampleStatus } = useStore();
   const [activeTab, setActiveTab] = useState('summary');
+  const [exportProjectId, setExportProjectId] = useState('');
 
   const pendingSamples = samples.filter((s) => s.status === '待送检');
   const testingSamples = samples.filter((s) => s.status === '检测中');
@@ -46,6 +51,79 @@ export default function Results() {
     }
   };
 
+  const handleExport = () => {
+    if (!exportProjectId) {
+      alert('请先选择要导出的项目');
+      return;
+    }
+    const project = projects.find((p) => p.id === exportProjectId);
+    if (!project) return;
+    const data = {
+      exportTime: new Date().toISOString(),
+      project,
+      samples: samples.filter((s) => s.projectId === exportProjectId),
+      attitudes: attitudes.filter((a) => a.projectId === exportProjectId),
+      fieldRecords: fieldRecords.filter(
+        (r) => r.projectId === exportProjectId
+      ),
+      routes: routes.filter((r) => r.projectId === exportProjectId),
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: 'application/json;charset=utf-8',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${project.code || project.name}-成果包-${
+      new Date().toISOString().split('T')[0]
+    }.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const buildPreview = (pid: string) => {
+    const projectSamples = samples.filter((s) => s.projectId === pid);
+    const projectAttitudes = attitudes.filter((a) => a.projectId === pid);
+    const projectRecords = fieldRecords.filter(
+      (r) => r.projectId === pid
+    );
+    const projectRoutes = routes.filter((r) => r.projectId === pid);
+    const sampleStatusSummary = {
+      待送检: projectSamples.filter(
+        (s) => s.status === '待送检' || s.status === '已采集'
+      ).length,
+      检测中: projectSamples.filter((s) => s.status === '检测中').length,
+      已完成: projectSamples.filter((s) => s.status === '已完成').length,
+    };
+    const attitudeByType = Array.from(
+      new Set(projectAttitudes.map((a) => a.structureType))
+    ).map((t) => ({
+      type: t,
+      count: projectAttitudes.filter((a) => a.structureType === t).length,
+    }));
+    return {
+      projectSamples,
+      projectAttitudes,
+      projectRecords,
+      projectRoutes,
+      sampleStatusSummary,
+      attitudeByType,
+    };
+  };
+
+  const preview = exportProjectId
+    ? buildPreview(exportProjectId)
+    : {
+        projectSamples: [],
+        projectAttitudes: [],
+        projectRecords: [],
+        projectRoutes: [],
+        sampleStatusSummary: { 待送检: 0, 检测中: 0, 已完成: 0 },
+        attitudeByType: [] as { type: string; count: number }[],
+      };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -53,9 +131,12 @@ export default function Results() {
           <h2 className="text-2xl font-bold text-slate-800">成果整理</h2>
           <p className="text-slate-500 mt-1">样品送检管理与勘探成果汇总</p>
         </div>
-        <button className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium shadow-sm">
+        <button
+          onClick={() => setActiveTab('export')}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium shadow-sm"
+        >
           <Download className="w-5 h-5" />
-          导出报告
+          导出成果包
         </button>
       </div>
 
@@ -119,6 +200,7 @@ export default function Results() {
               { id: 'summary', label: '成果汇总', icon: BarChart3 },
               { id: 'testing', label: '样品送检', icon: Beaker },
               { id: 'report', label: '报告管理', icon: FileBarChart },
+              { id: 'export', label: '成果导出', icon: Package },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -529,6 +611,308 @@ export default function Results() {
                   新建报告
                 </button>
               </div>
+            </div>
+          )}
+
+          {activeTab === 'export' && (
+            <div className="space-y-6">
+              <div className="p-5 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl">
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+                      <Package className="w-5 h-5 text-amber-600" />
+                      按项目导出成果包
+                    </h3>
+                    <p className="text-sm text-slate-600 mt-1.5">
+                      选择要导出的勘探项目，系统将汇总样品送检状态、产状统计、野外记录和路线概览，生成JSON格式成果包
+                    </p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+                    <select
+                      value={exportProjectId}
+                      onChange={(e) => setExportProjectId(e.target.value)}
+                      className="min-w-[240px] px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-700"
+                    >
+                      <option value="">请选择项目...</option>
+                      {projects.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}（{p.code}）
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={handleExport}
+                      disabled={!exportProjectId}
+                      className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                    >
+                      <Download className="w-4 h-4" />
+                      导出成果包
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {!exportProjectId ? (
+                <div className="p-12 bg-slate-50 rounded-xl text-center">
+                  <Package className="w-14 h-14 text-slate-300 mx-auto mb-3" />
+                  <p className="text-slate-500 text-sm">
+                    请在上方选择要导出的勘探项目，预览数据后即可导出
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-5">
+                  <div className="p-5 bg-white rounded-xl border border-slate-200">
+                    <h4 className="font-semibold text-slate-800 mb-4">
+                      数据概览
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="p-4 bg-green-50 rounded-xl text-center">
+                        <RouteIcon className="w-6 h-6 text-green-600 mx-auto mb-1.5" />
+                        <p className="text-2xl font-bold text-slate-800">
+                          {preview.projectRoutes.length}
+                        </p>
+                        <p className="text-xs text-slate-500">踏勘路线</p>
+                      </div>
+                      <div className="p-4 bg-amber-50 rounded-xl text-center">
+                        <Beaker className="w-6 h-6 text-amber-600 mx-auto mb-1.5" />
+                        <p className="text-2xl font-bold text-slate-800">
+                          {preview.projectSamples.length}
+                        </p>
+                        <p className="text-xs text-slate-500">采集样品</p>
+                      </div>
+                      <div className="p-4 bg-purple-50 rounded-xl text-center">
+                        <Compass className="w-6 h-6 text-purple-600 mx-auto mb-1.5" />
+                        <p className="text-2xl font-bold text-slate-800">
+                          {preview.projectAttitudes.length}
+                        </p>
+                        <p className="text-xs text-slate-500">产状测量</p>
+                      </div>
+                      <div className="p-4 bg-blue-50 rounded-xl text-center">
+                        <FileText className="w-6 h-6 text-blue-600 mx-auto mb-1.5" />
+                        <p className="text-2xl font-bold text-slate-800">
+                          {preview.projectRecords.length}
+                        </p>
+                        <p className="text-xs text-slate-500">野外记录</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                    <div className="p-5 bg-white rounded-xl border border-slate-200">
+                      <h4 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                        <Beaker className="w-4 h-4 text-amber-500" />
+                        样品送检状态
+                      </h4>
+                      <div className="grid grid-cols-3 gap-3 mb-4">
+                        <div className="p-3 bg-amber-50 rounded-lg text-center">
+                          <p className="text-xl font-bold text-amber-600">
+                            {preview.sampleStatusSummary.待送检}
+                          </p>
+                          <p className="text-xs text-slate-500">待送检</p>
+                        </div>
+                        <div className="p-3 bg-blue-50 rounded-lg text-center">
+                          <p className="text-xl font-bold text-blue-600">
+                            {preview.sampleStatusSummary.检测中}
+                          </p>
+                          <p className="text-xs text-slate-500">检测中</p>
+                        </div>
+                        <div className="p-3 bg-green-50 rounded-lg text-center">
+                          <p className="text-xl font-bold text-green-600">
+                            {preview.sampleStatusSummary.已完成}
+                          </p>
+                          <p className="text-xs text-slate-500">已完成</p>
+                        </div>
+                      </div>
+                      {preview.projectSamples.length === 0 ? (
+                        <div className="py-6 text-center text-sm text-slate-400">
+                          暂无样品数据
+                        </div>
+                      ) : (
+                        <div className="space-y-1.5 max-h-[240px] overflow-y-auto">
+                          {preview.projectSamples.slice(0, 10).map((s) => (
+                            <div
+                              key={s.id}
+                              className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg text-sm"
+                            >
+                              <div>
+                                <span className="font-mono text-xs text-slate-600">
+                                  {s.sampleNo}
+                                </span>
+                                <span className="text-slate-400 mx-2">·</span>
+                                <span className="text-slate-700">{s.type}</span>
+                              </div>
+                              <Badge
+                                variant={getSampleStatusColor(s.status) as any}
+                              >
+                                {s.status}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="p-5 bg-white rounded-xl border border-slate-200">
+                      <h4 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                        <Compass className="w-4 h-4 text-purple-500" />
+                        产状统计
+                      </h4>
+                      {preview.projectAttitudes.length === 0 ? (
+                        <div className="py-10 text-center text-sm text-slate-400">
+                          暂无产状数据
+                        </div>
+                      ) : (
+                        <>
+                          <div className="space-y-2.5 mb-5">
+                            {preview.attitudeByType.map((t) => {
+                              const max = Math.max(
+                                ...preview.attitudeByType.map(
+                                  (x) => x.count
+                                ),
+                                1
+                              );
+                              return (
+                                <div key={t.type}>
+                                  <div className="flex justify-between text-sm mb-1">
+                                    <span className="text-slate-600">
+                                      {t.type}
+                                    </span>
+                                    <span className="font-medium text-slate-800">
+                                      {t.count} 处
+                                    </span>
+                                  </div>
+                                  <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                                    <div
+                                      className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full"
+                                      style={{
+                                        width: `${
+                                          (t.count / max) * 100
+                                        }%`,
+                                      }}
+                                    ></div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 text-center">
+                            <div className="p-3 bg-slate-50 rounded-lg">
+                              <p className="text-xs text-slate-400">走向均值</p>
+                              <p className="mt-1 font-bold text-slate-800">
+                                {preview.projectAttitudes.length > 0
+                                  ? Math.round(
+                                      preview.projectAttitudes.reduce(
+                                        (s, a) => s + a.strike,
+                                        0
+                                      ) / preview.projectAttitudes.length
+                                    )
+                                  : 0}
+                                °
+                              </p>
+                            </div>
+                            <div className="p-3 bg-slate-50 rounded-lg">
+                              <p className="text-xs text-slate-400">倾角均值</p>
+                              <p className="mt-1 font-bold text-slate-800">
+                                {preview.projectAttitudes.length > 0
+                                  ? Math.round(
+                                      preview.projectAttitudes.reduce(
+                                        (s, a) => s + a.dip,
+                                        0
+                                      ) / preview.projectAttitudes.length
+                                    )
+                                  : 0}
+                                °
+                              </p>
+                            </div>
+                            <div className="p-3 bg-slate-50 rounded-lg">
+                              <p className="text-xs text-slate-400">类型数</p>
+                              <p className="mt-1 font-bold text-slate-800">
+                                {preview.attitudeByType.length}
+                              </p>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    <div className="p-5 bg-white rounded-xl border border-slate-200">
+                      <h4 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-blue-500" />
+                        野外记录
+                      </h4>
+                      {preview.projectRecords.length === 0 ? (
+                        <div className="py-8 text-center text-sm text-slate-400">
+                          暂无野外记录
+                        </div>
+                      ) : (
+                        <div className="space-y-2 max-h-[260px] overflow-y-auto">
+                          {preview.projectRecords.slice(0, 8).map((r) => (
+                            <div
+                              key={r.id}
+                              className="p-3 bg-slate-50 rounded-lg"
+                            >
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium text-slate-800">
+                                  {r.title}
+                                </p>
+                                <span className="text-xs text-slate-400">
+                                  {r.recordDate?.slice(5, 10)}
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+                                {r.content}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="p-5 bg-white rounded-xl border border-slate-200">
+                      <h4 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                        <RouteIcon className="w-4 h-4 text-green-500" />
+                        踏勘路线概览
+                      </h4>
+                      {preview.projectRoutes.length === 0 ? (
+                        <div className="py-8 text-center text-sm text-slate-400">
+                          暂无踏勘路线
+                        </div>
+                      ) : (
+                        <div className="space-y-2 max-h-[260px] overflow-y-auto">
+                          {preview.projectRoutes.map((r) => (
+                            <div
+                              key={r.id}
+                              className="p-3 bg-slate-50 rounded-lg"
+                            >
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium text-slate-800">
+                                  {r.name}
+                                </p>
+                                <Badge
+                                  variant={
+                                    r.status === '进行中'
+                                      ? 'success'
+                                      : r.status === '已完成'
+                                      ? 'default'
+                                      : 'warning'
+                                  }
+                                >
+                                  {r.status}
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-slate-500 mt-1">
+                                {r.startPoint || '起点'} →{' '}
+                                {r.endPoint || '终点'} · {r.distance || 0} km ·{' '}
+                                {r.planDate}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

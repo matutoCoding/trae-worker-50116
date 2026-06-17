@@ -19,6 +19,7 @@ export default function Attitude() {
   const [showModal, setShowModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [structureFilter, setStructureFilter] = useState('全部');
+  const [projectFilter, setProjectFilter] = useState('全部');
   const [compassAngle, setCompassAngle] = useState(125);
   const [dipAngle, setDipAngle] = useState(35);
   const [isMeasuring, setIsMeasuring] = useState(false);
@@ -42,7 +43,9 @@ export default function Attitude() {
       att.rockType.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStructure =
       structureFilter === '全部' || att.structureType === structureFilter;
-    return matchesSearch && matchesStructure;
+    const matchesProject =
+      projectFilter === '全部' || att.projectId === projectFilter;
+    return matchesSearch && matchesStructure && matchesProject;
   });
 
   const getProjectName = (projectId: string) => {
@@ -190,8 +193,20 @@ export default function Attitude() {
                 className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Filter className="w-5 h-5 text-slate-400" />
+              <select
+                value={projectFilter}
+                onChange={(e) => setProjectFilter(e.target.value)}
+                className="px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-700"
+              >
+                <option value="全部">全部项目</option>
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
               <select
                 value={structureFilter}
                 onChange={(e) => setStructureFilter(e.target.value)}
