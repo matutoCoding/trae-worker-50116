@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 
 export default function Sampling() {
-  const { samples, projects, addSample } = useStore();
+  const { samples, projects, addSample, updateSampleStatus } = useStore();
   const [showModal, setShowModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('全部');
@@ -301,9 +301,32 @@ export default function Sampling() {
                     </Badge>
                   </td>
                   <td className="py-3 px-4">
-                    <button className="text-sm text-amber-600 hover:text-amber-700 font-medium">
-                      详情
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {(sample.status === '已采集' ||
+                        sample.status === '待送检') && (
+                        <button
+                          onClick={() =>
+                            updateSampleStatus(sample.id, '检测中')
+                          }
+                          className="text-xs px-2.5 py-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-md transition-colors font-medium"
+                        >
+                          送检
+                        </button>
+                      )}
+                      {sample.status === '检测中' && (
+                        <button
+                          onClick={() =>
+                            updateSampleStatus(sample.id, '已完成')
+                          }
+                          className="text-xs px-2.5 py-1 bg-green-50 text-green-600 hover:bg-green-100 rounded-md transition-colors font-medium"
+                        >
+                          登记完成
+                        </button>
+                      )}
+                      <button className="text-sm text-amber-600 hover:text-amber-700 font-medium">
+                        详情
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

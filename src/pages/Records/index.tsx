@@ -21,6 +21,7 @@ export default function Records() {
   const [showModal, setShowModal] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [projectFilter, setProjectFilter] = useState('全部');
   const [newRecord, setNewRecord] = useState({
     title: '',
     content: '',
@@ -36,7 +37,9 @@ export default function Records() {
     const matchesSearch =
       record.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       record.content.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
+    const matchesProject =
+      projectFilter === '全部' || record.projectId === projectFilter;
+    return matchesSearch && matchesProject;
   });
 
   const getProjectName = (projectId: string) => {
@@ -169,7 +172,11 @@ export default function Records() {
         </div>
         <div className="flex items-center gap-2">
           <Filter className="w-5 h-5 text-slate-400" />
-          <select className="px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-700">
+          <select
+            value={projectFilter}
+            onChange={(e) => setProjectFilter(e.target.value)}
+            className="px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-700"
+          >
             <option value="全部">全部项目</option>
             {projects.map((p) => (
               <option key={p.id} value={p.id}>

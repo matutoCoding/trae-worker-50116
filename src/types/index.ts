@@ -104,6 +104,12 @@ export interface Camp {
   facilities: string[];
   status: '正常' | '维护中' | '停用';
   establishedDate: string;
+  contactPhone?: string;
+  coordinates?: {
+    longitude: number;
+    latitude: number;
+    elevation?: number;
+  };
   supplies: SupplyItem[];
 }
 

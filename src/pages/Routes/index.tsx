@@ -13,14 +13,94 @@ import {
   Mountain,
   TrendingUp,
   Clock,
+  X,
 } from 'lucide-react';
-import type { Route } from '@/types';
+import type { Route, Waypoint } from '@/types';
 
 export default function Routes() {
-  const { routes, projects } = useStore();
+  const { routes, projects, addRoute } = useStore();
   const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('全部');
+  const [showNewModal, setShowNewModal] = useState(false);
+  const [newRoute, setNewRoute] = useState({
+    name: '',
+    projectId: '',
+    description: '',
+    startPoint: '',
+    endPoint: '',
+    planDate: '',
+    distance: 0,
+    status: '规划中' as Route['status'],
+    difficulty: '简单' as Route['difficulty'],
+    waypointName: '',
+    waypointLon: '',
+    waypointLat: '',
+    waypointEle: '',
+    waypoints: [] as Waypoint[],
+  });
+
+  const addWaypoint = () => {
+    if (!newRoute.waypointName.trim()) return;
+    const wp: Waypoint = {
+      id: `wp${Date.now()}`,
+      routeId: '',
+      name: newRoute.waypointName,
+      longitude: parseFloat(newRoute.waypointLon) || 0,
+      latitude: parseFloat(newRoute.waypointLat) || 0,
+      elevation: parseFloat(newRoute.waypointEle) || 0,
+      sequence: newRoute.waypoints.length + 1,
+    };
+    setNewRoute({
+      ...newRoute,
+      waypoints: [...newRoute.waypoints, wp],
+      waypointName: '',
+      waypointLon: '',
+      waypointLat: '',
+      waypointEle: '',
+    });
+  };
+
+  const removeWaypoint = (idx: number) => {
+    setNewRoute({
+      ...newRoute,
+      waypoints: newRoute.waypoints.filter((_, i) => i !== idx),
+    });
+  };
+
+  const handleSubmitNewRoute = () => {
+    const route: Route = {
+      id: `r${Date.now()}`,
+      name: newRoute.name,
+      projectId: newRoute.projectId || projects[0]?.id || '',
+      description: newRoute.description,
+      startPoint: newRoute.startPoint,
+      endPoint: newRoute.endPoint,
+      distance: newRoute.distance,
+      planDate: newRoute.planDate || new Date().toISOString().split('T')[0],
+      status: newRoute.status,
+      difficulty: newRoute.difficulty,
+      waypoints: newRoute.waypoints,
+    };
+    addRoute(route);
+    setShowNewModal(false);
+    setNewRoute({
+      name: '',
+      projectId: '',
+      description: '',
+      startPoint: '',
+      endPoint: '',
+      planDate: '',
+      distance: 0,
+      status: '规划中',
+      difficulty: '简单',
+      waypointName: '',
+      waypointLon: '',
+      waypointLat: '',
+      waypointEle: '',
+      waypoints: [],
+    });
+  };
 
   const filteredRoutes = routes.filter((route) => {
     const matchesSearch = route.name
@@ -67,7 +147,10 @@ export default function Routes() {
           <h2 className="text-2xl font-bold text-slate-800">踏勘路线</h2>
           <p className="text-slate-500 mt-1">规划和管理野外踏勘路线</p>
         </div>
-        <button className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium shadow-sm">
+        <button
+          onClick={() => setShowNewModal(true)}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium shadow-sm"
+        >
           <Plus className="w-5 h-5" />
           新建路线
         </button>
@@ -326,6 +409,272 @@ export default function Routes() {
               </button>
               <button className="flex-1 py-2.5 border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium">
                 编辑路线
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showNewModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-xl max-h-[90vh] overflow-auto">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-slate-800">新建踏勘路线</h3>
+              <button
+                onClick={() => setShowNewModal(false)}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                  路线名称 *
+                </label>
+                <input
+                  type="text"
+                  value={newRoute.name}
+                  onChange={(e) =>
+                    setNewRoute({ ...newRoute, name: e.target.value })
+                  }
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  placeholder="如：金沙江左岸A线踏勘"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                  所属项目
+                </label>
+                <select
+                  value={newRoute.projectId}
+                  onChange={(e) =>
+                    setNewRoute({ ...newRoute, projectId: e.target.value })
+                  }
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                >
+                  <option value="">请选择项目</option>
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    起点
+                  </label>
+                  <input
+                    type="text"
+                    value={newRoute.startPoint}
+                    onChange={(e) =>
+                      setNewRoute({ ...newRoute, startPoint: e.target.value })
+                    }
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    placeholder="起点地点"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    终点
+                  </label>
+                  <input
+                    type="text"
+                    value={newRoute.endPoint}
+                    onChange={(e) =>
+                      setNewRoute({ ...newRoute, endPoint: e.target.value })
+                    }
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    placeholder="终点地点"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    里程(km)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={newRoute.distance || ''}
+                    onChange={(e) =>
+                      setNewRoute({
+                        ...newRoute,
+                        distance: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    placeholder="5.0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    状态
+                  </label>
+                  <select
+                    value={newRoute.status}
+                    onChange={(e) =>
+                      setNewRoute({
+                        ...newRoute,
+                        status: e.target.value as Route['status'],
+                      })
+                    }
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  >
+                    <option value="规划中">规划中</option>
+                    <option value="进行中">进行中</option>
+                    <option value="已完成">已完成</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    难度
+                  </label>
+                  <select
+                    value={newRoute.difficulty}
+                    onChange={(e) =>
+                      setNewRoute({
+                        ...newRoute,
+                        difficulty: e.target.value as Route['difficulty'],
+                      })
+                    }
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  >
+                    <option value="简单">简单</option>
+                    <option value="中等">中等</option>
+                    <option value="困难">困难</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                  计划日期
+                </label>
+                <input
+                  type="date"
+                  value={newRoute.planDate}
+                  onChange={(e) =>
+                    setNewRoute({ ...newRoute, planDate: e.target.value })
+                  }
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                  路线描述
+                </label>
+                <textarea
+                  value={newRoute.description}
+                  onChange={(e) =>
+                    setNewRoute({ ...newRoute, description: e.target.value })
+                  }
+                  rows={2}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
+                  placeholder="路线说明..."
+                />
+              </div>
+
+              <div className="pt-2 border-t border-slate-100">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  添加途经点位
+                </label>
+                <div className="grid grid-cols-12 gap-2 mb-3">
+                  <input
+                    type="text"
+                    value={newRoute.waypointName}
+                    onChange={(e) =>
+                      setNewRoute({ ...newRoute, waypointName: e.target.value })
+                    }
+                    className="col-span-4 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    placeholder="点位名称"
+                  />
+                  <input
+                    type="text"
+                    value={newRoute.waypointLon}
+                    onChange={(e) =>
+                      setNewRoute({ ...newRoute, waypointLon: e.target.value })
+                    }
+                    className="col-span-2 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    placeholder="经度"
+                  />
+                  <input
+                    type="text"
+                    value={newRoute.waypointLat}
+                    onChange={(e) =>
+                      setNewRoute({ ...newRoute, waypointLat: e.target.value })
+                    }
+                    className="col-span-2 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    placeholder="纬度"
+                  />
+                  <input
+                    type="text"
+                    value={newRoute.waypointEle}
+                    onChange={(e) =>
+                      setNewRoute({ ...newRoute, waypointEle: e.target.value })
+                    }
+                    className="col-span-2 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    placeholder="海拔"
+                  />
+                  <button
+                    onClick={addWaypoint}
+                    className="col-span-2 px-3 py-2 bg-slate-600 text-white rounded-lg text-sm hover:bg-slate-700 transition-colors"
+                  >
+                    + 添加
+                  </button>
+                </div>
+
+                {newRoute.waypoints.length > 0 && (
+                  <div className="space-y-2">
+                    {newRoute.waypoints.map((wp, idx) => (
+                      <div
+                        key={wp.id}
+                        className="flex items-center justify-between p-2 bg-slate-50 rounded-lg"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-6 h-6 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-xs font-bold">
+                            {idx + 1}
+                          </div>
+                          <span className="text-sm font-medium text-slate-700">
+                            {wp.name}
+                          </span>
+                          <span className="text-xs text-slate-500">
+                            {wp.longitude}°, {wp.latitude}°, {wp.elevation}m
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => removeWaypoint(idx)}
+                          className="text-slate-400 hover:text-red-500 text-sm"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-slate-100 flex gap-3">
+              <button
+                onClick={handleSubmitNewRoute}
+                className="flex-1 py-2.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium"
+              >
+                创建路线
+              </button>
+              <button
+                onClick={() => setShowNewModal(false)}
+                className="flex-1 py-2.5 border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium"
+              >
+                取消
               </button>
             </div>
           </div>

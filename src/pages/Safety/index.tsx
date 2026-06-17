@@ -19,12 +19,15 @@ import {
   CheckCircle,
   Info,
 } from 'lucide-react';
+import type { Camp } from '@/types';
 
 export default function Safety() {
-  const { camps, singleOperations, safetyKnowledge, addSingleOperation } = useStore();
+  const { camps, singleOperations, safetyKnowledge, addSingleOperation, addCamp } = useStore();
   const [activeTab, setActiveTab] = useState('camp');
   const [showOperationModal, setShowOperationModal] = useState(false);
+  const [showCampModal, setShowCampModal] = useState(false);
   const [selectedKnowledge, setSelectedKnowledge] = useState<any>(null);
+  const [selectedCamp, setSelectedCamp] = useState<Camp | null>(null);
   const [newOperation, setNewOperation] = useState({
     operator: '',
     location: '',
@@ -33,6 +36,50 @@ export default function Safety() {
     safetyMeasures: '',
     contactPhone: '',
   });
+  const [newCamp, setNewCamp] = useState({
+    name: '',
+    location: '',
+    leader: '',
+    capacity: 0,
+    establishDate: '',
+    contactPhone: '',
+    longitude: 0,
+    latitude: 0,
+    elevation: 0,
+  });
+
+  const handleSubmitCamp = () => {
+    const camp: Camp = {
+      id: `c${Date.now()}`,
+      name: newCamp.name,
+      location: newCamp.location,
+      leader: newCamp.leader,
+      capacity: newCamp.capacity,
+      establishedDate: newCamp.establishDate || new Date().toISOString().split('T')[0],
+      contactPhone: newCamp.contactPhone,
+      status: '正常',
+      coordinates: {
+        longitude: newCamp.longitude,
+        latitude: newCamp.latitude,
+        elevation: newCamp.elevation,
+      },
+      facilities: [],
+      supplies: [],
+    };
+    addCamp(camp);
+    setShowCampModal(false);
+    setNewCamp({
+      name: '',
+      location: '',
+      leader: '',
+      capacity: 0,
+      establishDate: '',
+      contactPhone: '',
+      longitude: 0,
+      latitude: 0,
+      elevation: 0,
+    });
+  };
 
   const handleSubmitOperation = () => {
     const operation = {
@@ -202,7 +249,10 @@ export default function Safety() {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold text-slate-800">野外营地</h3>
-                <button className="inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors">
+                <button
+                  onClick={() => setShowCampModal(true)}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
+                >
                   <Plus className="w-4 h-4" />
                   新增营地
                 </button>
@@ -277,7 +327,10 @@ export default function Safety() {
                       </div>
                     </div>
 
-                    <button className="w-full mt-4 py-2 text-sm text-amber-600 hover:text-amber-700 font-medium border border-dashed border-amber-300 rounded-lg hover:bg-amber-50 transition-colors flex items-center justify-center gap-1">
+                    <button
+                      onClick={() => setSelectedCamp(camp)}
+                      className="w-full mt-4 py-2 text-sm text-amber-600 hover:text-amber-700 font-medium border border-dashed border-amber-300 rounded-lg hover:bg-amber-50 transition-colors flex items-center justify-center gap-1"
+                    >
                       查看详情 <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
@@ -594,6 +647,325 @@ export default function Safety() {
                 className="w-full py-2.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium"
               >
                 我已了解
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCampModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-auto">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-slate-800">新增野外营地</h3>
+              <button
+                onClick={() => setShowCampModal(false)}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                  营地名称 *
+                </label>
+                <input
+                  type="text"
+                  value={newCamp.name}
+                  onChange={(e) =>
+                    setNewCamp({ ...newCamp, name: e.target.value })
+                  }
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  placeholder="如：金沙江1号营地"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                  营地位置 *
+                </label>
+                <input
+                  type="text"
+                  value={newCamp.location}
+                  onChange={(e) =>
+                    setNewCamp({ ...newCamp, location: e.target.value })
+                  }
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  placeholder="如：云南省迪庆州金沙江东岸"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    营地负责人
+                  </label>
+                  <input
+                    type="text"
+                    value={newCamp.leader}
+                    onChange={(e) =>
+                      setNewCamp({ ...newCamp, leader: e.target.value })
+                    }
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    placeholder="负责人姓名"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    容纳人数
+                  </label>
+                  <input
+                    type="number"
+                    value={newCamp.capacity || ''}
+                    onChange={(e) =>
+                      setNewCamp({
+                        ...newCamp,
+                        capacity: parseInt(e.target.value) || 0,
+                      })
+                    }
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    placeholder="如：20"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    联系电话
+                  </label>
+                  <input
+                    type="tel"
+                    value={newCamp.contactPhone}
+                    onChange={(e) =>
+                      setNewCamp({ ...newCamp, contactPhone: e.target.value })
+                    }
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    placeholder="营地电话"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    建立日期
+                  </label>
+                  <input
+                    type="date"
+                    value={newCamp.establishDate}
+                    onChange={(e) =>
+                      setNewCamp({ ...newCamp, establishDate: e.target.value })
+                    }
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    经度
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={newCamp.longitude || ''}
+                    onChange={(e) =>
+                      setNewCamp({
+                        ...newCamp,
+                        longitude: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    placeholder="99.50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    纬度
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={newCamp.latitude || ''}
+                    onChange={(e) =>
+                      setNewCamp({
+                        ...newCamp,
+                        latitude: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    placeholder="27.80"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    海拔(m)
+                  </label>
+                  <input
+                    type="number"
+                    value={newCamp.elevation || ''}
+                    onChange={(e) =>
+                      setNewCamp({
+                        ...newCamp,
+                        elevation: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    placeholder="2500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-slate-100 flex gap-3">
+              <button
+                onClick={handleSubmitCamp}
+                className="flex-1 py-2.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium"
+              >
+                创建营地
+              </button>
+              <button
+                onClick={() => setShowCampModal(false)}
+                className="flex-1 py-2.5 border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium"
+              >
+                取消
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedCamp && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-auto">
+            <div className="p-6 border-b border-slate-100 flex items-start justify-between">
+              <div className="flex items-start gap-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                  <Tent className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800">
+                    {selectedCamp.name}
+                  </h3>
+                  <p className="text-slate-500 mt-1 flex items-center gap-1.5">
+                    <MapPin className="w-4 h-4" /> {selectedCamp.location}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge
+                  variant={getStatusColor(selectedCamp.status) as any}
+                >
+                  {selectedCamp.status}
+                </Badge>
+                <button
+                  onClick={() => setSelectedCamp(null)}
+                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-slate-400" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-slate-50 rounded-xl">
+                  <p className="text-sm text-slate-500">营地负责人</p>
+                  <p className="font-medium text-slate-800 mt-1">
+                    {selectedCamp.leader || '—'}
+                  </p>
+                </div>
+                <div className="p-4 bg-slate-50 rounded-xl">
+                  <p className="text-sm text-slate-500">容纳人数</p>
+                  <p className="font-medium text-slate-800 mt-1">
+                    {selectedCamp.capacity} 人
+                  </p>
+                </div>
+                <div className="p-4 bg-slate-50 rounded-xl">
+                  <p className="text-sm text-slate-500">建立日期</p>
+                  <p className="font-medium text-slate-800 mt-1">
+                    {selectedCamp.establishedDate}
+                  </p>
+                </div>
+                <div className="p-4 bg-slate-50 rounded-xl">
+                  <p className="text-sm text-slate-500">联系电话</p>
+                  <p className="font-medium text-slate-800 mt-1">
+                    {selectedCamp.contactPhone || '—'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-4 bg-slate-50 rounded-xl">
+                <p className="text-sm text-slate-500 mb-2">坐标信息</p>
+                <div className="flex gap-6 text-sm text-slate-700">
+                  <span>
+                    经度：
+                    <b className="text-slate-800">
+                      {selectedCamp.coordinates.longitude}°
+                    </b>
+                  </span>
+                  <span>
+                    纬度：
+                    <b className="text-slate-800">
+                      {selectedCamp.coordinates.latitude}°
+                    </b>
+                  </span>
+                  <span>
+                    海拔：
+                    <b className="text-slate-800">
+                      {selectedCamp.coordinates.elevation}m
+                    </b>
+                  </span>
+                </div>
+              </div>
+
+              {selectedCamp.facilities.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-slate-800 mb-3">配套设施</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedCamp.facilities.map((f, idx) => (
+                      <Badge key={idx} variant="default">
+                        {f}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedCamp.supplies.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-slate-800 mb-3">物资储备</h4>
+                  <div className="space-y-2">
+                    {selectedCamp.supplies.map((s, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
+                      >
+                        <span className="text-sm font-medium text-slate-700">
+                          {s.name}
+                        </span>
+                        <span
+                          className={`text-sm ${getSupplyStatusColor(s.status)}`}
+                        >
+                          {s.quantity} {s.unit} · {s.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-slate-100 flex gap-3">
+              <button className="flex-1 py-2.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium">
+                编辑信息
+              </button>
+              <button
+                onClick={() => setSelectedCamp(null)}
+                className="flex-1 py-2.5 border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium"
+              >
+                关闭
               </button>
             </div>
           </div>

@@ -61,14 +61,20 @@ export default function Attitude() {
   }, [isMeasuring]);
 
   const handleMeasure = () => {
-    setIsMeasuring(!isMeasuring);
-    if (!isMeasuring) {
+    if (isMeasuring) {
+      const strike = Math.round(((compassAngle % 360) + 360) % 360);
+      const dip = Math.round(dipAngle);
+      const dipDirection = Math.round(((strike + 90) % 360 + 360) % 360);
       setNewAttitude({
         ...newAttitude,
-        strike: Math.round(compassAngle),
-        dip: Math.round(dipAngle),
-        dipDirection: Math.round((compassAngle + 90) % 360),
+        strike,
+        dip,
+        dipDirection,
       });
+      setIsMeasuring(false);
+      setShowModal(true);
+    } else {
+      setIsMeasuring(true);
     }
   };
 
