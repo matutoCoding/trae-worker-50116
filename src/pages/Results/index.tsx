@@ -1,0 +1,522 @@
+import { useState } from 'react';
+import { useStore } from '@/store/useStore';
+import { Badge } from '@/components/common/Badge';
+import {
+  FileBarChart,
+  Beaker,
+  Send,
+  CheckCircle,
+  Clock,
+  Download,
+  BarChart3,
+  PieChart,
+  Map,
+  FileText,
+  Calendar,
+  User,
+  ChevronRight,
+  Plus,
+} from 'lucide-react';
+
+export default function Results() {
+  const { samples, projects, attitudes, fieldRecords } = useStore();
+  const [activeTab, setActiveTab] = useState('summary');
+
+  const pendingSamples = samples.filter((s) => s.status === '待送检');
+  const testingSamples = samples.filter((s) => s.status === '检测中');
+  const completedSamples = samples.filter((s) => s.status === '已完成');
+
+  const sampleTypes = ['岩石', '矿石', '土壤', '化石'];
+  const typeCounts = sampleTypes.map(
+    (type) => samples.filter((s) => s.type === type).length
+  );
+
+  const structureTypes = [...new Set(attitudes.map((a) => a.structureType))];
+
+  const getSampleStatusColor = (status: string) => {
+    switch (status) {
+      case '已完成':
+        return 'success';
+      case '检测中':
+        return 'info';
+      case '待送检':
+        return 'warning';
+      default:
+        return 'default';
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800">成果整理</h2>
+          <p className="text-slate-500 mt-1">样品送检管理与勘探成果汇总</p>
+        </div>
+        <button className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium shadow-sm">
+          <Download className="w-5 h-5" />
+          导出报告
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+              <Beaker className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-slate-800">{samples.length}</p>
+              <p className="text-sm text-slate-500">样品总数</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+              <Send className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-slate-800">
+                {pendingSamples.length}
+              </p>
+              <p className="text-sm text-slate-500">待送检</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+              <Clock className="w-5 h-5 text-purple-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-slate-800">
+                {testingSamples.length}
+              </p>
+              <p className="text-sm text-slate-500">检测中</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-slate-800">
+                {completedSamples.length}
+              </p>
+              <p className="text-sm text-slate-500">已完成</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="border-b border-slate-100">
+          <nav className="flex">
+            {[
+              { id: 'summary', label: '成果汇总', icon: BarChart3 },
+              { id: 'testing', label: '样品送检', icon: Beaker },
+              { id: 'report', label: '报告管理', icon: FileBarChart },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-amber-500 text-amber-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <tab.icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        <div className="p-6">
+          {activeTab === 'summary' && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="p-5 bg-slate-50 rounded-xl">
+                  <h3 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                    <PieChart className="w-5 h-5 text-amber-500" />
+                    样品类型分布
+                  </h3>
+                  <div className="space-y-3">
+                    {sampleTypes.map((type, index) => {
+                      const count = typeCounts[index];
+                      const percentage = samples.length > 0
+                        ? (count / samples.length) * 100
+                        : 0;
+                      const colors = [
+                        'bg-slate-400',
+                        'bg-amber-500',
+                        'bg-green-500',
+                        'bg-blue-500',
+                      ];
+                      return (
+                        <div key={type}>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-slate-600">{type}</span>
+                            <span className="font-medium text-slate-800">
+                              {count} 件 ({percentage.toFixed(1)}%)
+                            </span>
+                          </div>
+                          <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full ${colors[index]} rounded-full`}
+                              style={{ width: `${percentage}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="p-5 bg-slate-50 rounded-xl">
+                  <h3 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-green-500" />
+                    产状构造类型统计
+                  </h3>
+                  <div className="space-y-3">
+                    {structureTypes.map((type) => {
+                      const count = attitudes.filter(
+                        (a) => a.structureType === type
+                      ).length;
+                      const maxCount = Math.max(
+                        ...structureTypes.map(
+                          (t) =>
+                            attitudes.filter((a) => a.structureType === t).length
+                        )
+                      );
+                      const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
+                      return (
+                        <div key={type}>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-slate-600">{type}</span>
+                            <span className="font-medium text-slate-800">
+                              {count} 处
+                            </span>
+                          </div>
+                          <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full"
+                              style={{ width: `${percentage}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                  <Map className="w-5 h-5 text-blue-500" />
+                  项目成果概览
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {projects.map((project) => {
+                    const projectSamples = samples.filter(
+                      (s) => s.projectId === project.id
+                    );
+                    const projectAttitudes = attitudes.filter(
+                      (a) => a.projectId === project.id
+                    );
+                    const projectRecords = fieldRecords.filter(
+                      (r) => r.projectId === project.id
+                    );
+
+                    return (
+                      <div
+                        key={project.id}
+                        className="p-4 bg-white border border-slate-200 rounded-xl hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h4 className="font-medium text-slate-800">
+                              {project.name}
+                            </h4>
+                            <p className="text-xs text-slate-500">
+                              {project.code}
+                            </p>
+                          </div>
+                          <Badge variant="amber">{project.status}</Badge>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 mt-4">
+                          <div className="text-center">
+                            <p className="text-xl font-bold text-amber-600">
+                              {projectSamples.length}
+                            </p>
+                            <p className="text-xs text-slate-500">样品</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xl font-bold text-green-600">
+                              {projectAttitudes.length}
+                            </p>
+                            <p className="text-xs text-slate-500">产状</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xl font-bold text-blue-600">
+                              {projectRecords.length}
+                            </p>
+                            <p className="text-xs text-slate-500">记录</p>
+                          </div>
+                        </div>
+
+                        <button className="w-full mt-4 py-2 text-sm text-amber-600 hover:text-amber-700 font-medium border border-dashed border-amber-300 rounded-lg hover:bg-amber-50 transition-colors flex items-center justify-center gap-1">
+                          查看详情 <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="p-5 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+                    <FileText className="w-6 h-6 text-amber-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-slate-800">
+                      生成勘探成果报告
+                    </h4>
+                    <p className="text-sm text-slate-600 mt-1">
+                      自动汇总项目数据，生成标准化的地质勘探成果报告，支持PDF和Word格式导出
+                    </p>
+                  </div>
+                  <button className="px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition-colors flex-shrink-0">
+                    立即生成
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'testing' && (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="font-semibold text-slate-800">样品送检管理</h3>
+                <button className="inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors">
+                  <Plus className="w-4 h-4" />
+                  批量送检
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="p-4 bg-amber-50 rounded-xl">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-slate-600">待送检样品</p>
+                      <p className="text-2xl font-bold text-amber-600">
+                        {pendingSamples.length} 件
+                      </p>
+                    </div>
+                    <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
+                      <Beaker className="w-6 h-6 text-amber-600" />
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 bg-blue-50 rounded-xl">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-slate-600">检测中</p>
+                      <p className="text-2xl font-bold text-blue-600">
+                        {testingSamples.length} 件
+                      </p>
+                    </div>
+                    <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                      <Clock className="w-6 h-6 text-blue-600" />
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 bg-green-50 rounded-xl">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-slate-600">已完成检测</p>
+                      <p className="text-2xl font-bold text-green-600">
+                        {completedSamples.length} 件
+                      </p>
+                    </div>
+                    <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
+                      <CheckCircle className="w-6 h-6 text-green-600" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-100">
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">
+                          样品编号
+                        </th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">
+                          类型
+                        </th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">
+                          采样地点
+                        </th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">
+                          采集人
+                        </th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">
+                          日期
+                        </th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">
+                          状态
+                        </th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">
+                          操作
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {samples.map((sample, index) => (
+                        <tr
+                          key={sample.id}
+                          className={`border-b border-slate-50 hover:bg-slate-50 transition-colors ${
+                            index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'
+                          }`}
+                        >
+                          <td className="py-3 px-4">
+                            <span className="font-medium text-slate-800">
+                              {sample.sampleNo}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <Badge variant="amber">{sample.type}</Badge>
+                          </td>
+                          <td className="py-3 px-4 text-sm text-slate-600">
+                            {sample.location}
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-1.5 text-sm text-slate-600">
+                              <User className="w-4 h-4 text-slate-400" />
+                              {sample.collector}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-1.5 text-sm text-slate-500">
+                              <Calendar className="w-4 h-4 text-slate-400" />
+                              {sample.collectDate}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <Badge variant={getSampleStatusColor(sample.status) as any}>
+                              {sample.status}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-4">
+                            {sample.status === '已采集' ||
+                            sample.status === '待送检' ? (
+                              <button className="text-sm text-amber-600 hover:text-amber-700 font-medium">
+                                送检
+                              </button>
+                            ) : (
+                              <button className="text-sm text-slate-500 hover:text-slate-600">
+                                详情
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'report' && (
+            <div className="space-y-4">
+              <h3 className="font-semibold text-slate-800">成果报告</h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  {
+                    name: '金沙江铜多金属矿勘探项目阶段性报告',
+                    date: '2024-05-20',
+                    type: '阶段性报告',
+                    status: '已完成',
+                  },
+                  {
+                    name: '秦岭西段金矿普查设计书',
+                    date: '2024-04-15',
+                    type: '设计书',
+                    status: '已完成',
+                  },
+                  {
+                    name: '华北平原煤炭资源调查报告',
+                    date: '2024-02-28',
+                    type: '最终报告',
+                    status: '已完成',
+                  },
+                  {
+                    name: '藏北高原锂矿调查可行性报告',
+                    date: '2024-06-01',
+                    type: '可行性报告',
+                    status: '编制中',
+                  },
+                ].map((report, index) => (
+                  <div
+                    key={index}
+                    className="p-5 bg-slate-50 rounded-xl hover:shadow-md transition-shadow cursor-pointer"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center flex-shrink-0">
+                        <FileBarChart className="w-6 h-6 text-amber-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-slate-800 truncate">
+                          {report.name}
+                        </h4>
+                        <div className="flex items-center gap-3 mt-2">
+                          <Badge variant="amber">{report.type}</Badge>
+                          <span className="text-sm text-slate-500">
+                            {report.date}
+                          </span>
+                        </div>
+                      </div>
+                      <Badge
+                        variant={report.status === '已完成' ? 'success' : 'warning'}
+                      >
+                        {report.status}
+                      </Badge>
+                    </div>
+
+                    <div className="flex gap-2 mt-4 pt-4 border-t border-slate-200">
+                      <button className="flex-1 py-2 text-sm text-amber-600 hover:bg-amber-50 rounded-lg font-medium transition-colors flex items-center justify-center gap-1">
+                        <Download className="w-4 h-4" />
+                        下载
+                      </button>
+                      <button className="flex-1 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg font-medium transition-colors">
+                        查看
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6">
+                <button className="w-full py-3 text-amber-600 hover:text-amber-700 font-medium border-2 border-dashed border-amber-300 rounded-xl hover:bg-amber-50 transition-colors flex items-center justify-center gap-2">
+                  <Plus className="w-5 h-5" />
+                  新建报告
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
